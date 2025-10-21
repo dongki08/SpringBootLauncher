@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- 배포 전략: 단일 exe, 런타임 포함 -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- InvariantGlobalization removed - causes WPF culture errors -->
+
+    <!-- 단일 파일 최적화 -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+    <!-- 트리밍 (WPF는 주의 필요) -->
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- 불필요한 지역화 리소스 제거 -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- 파일 잠금/콘솔창 미표시 -->
+    <WindowsEnableCRT>true</WindowsEnableCRT>
+    <GenerateRuntimeConfigDevFile>false</GenerateRuntimeConfigDevFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
+  </ItemGroup>
+
+  <!-- 아이콘 리소스 포함 -->
+  <ItemGroup>
+    <Resource Include="Icons\spring_48.png" />
+    <Resource Include="Icons\spring_56.png" />
+  </ItemGroup>
+
+</Project>
+

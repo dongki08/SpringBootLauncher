@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpringBootLauncher", "SpringBootLauncher\SpringBootLauncher.csproj", "{EFA60552-83B0-47CC-A0DF-4E05DC2F7BE7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFA60552-83B0-47CC-A0DF-4E05DC2F7BE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFA60552-83B0-47CC-A0DF-4E05DC2F7BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFA60552-83B0-47CC-A0DF-4E05DC2F7BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFA60552-83B0-47CC-A0DF-4E05DC2F7BE7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
