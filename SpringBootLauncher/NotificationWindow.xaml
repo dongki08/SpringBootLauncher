@@ -1,0 +1,90 @@
+<Window x:Class="SpringBootLauncher.NotificationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="알림"
+        Height="80" Width="350"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize">
+
+    <Border Background="#F0F0F0"
+            BorderBrush="#CCCCCC"
+            BorderThickness="1"
+            CornerRadius="0">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
+        </Border.Effect>
+
+        <Grid Margin="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 아이콘 -->
+            <Image x:Name="IconImage"
+                   Grid.Column="0"
+                   Width="32"
+                   Height="32"
+                   Margin="0,0,12,0"
+                   VerticalAlignment="Top"/>
+
+            <!-- 텍스트 영역 -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+                <TextBlock x:Name="TitleTextBlock"
+                           Text="알림"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="#000000"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,10"/>
+                <TextBlock x:Name="MessageTextBlock"
+                           Text="메시지"
+                           FontSize="12"
+                           Foreground="#555555"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- 닫기 버튼 -->
+            <Button x:Name="CloseButton"
+                    Grid.Column="2"
+                    Content="✕"
+                    Width="20"
+                    Height="20"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="#666666"
+                    Cursor="Hand"
+                    VerticalAlignment="Top"
+                    Click="CloseButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="3">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                                <Setter Property="Foreground" Value="#000000"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+    </Border>
+</Window>
