@@ -163,6 +163,82 @@ namespace SpringBootLauncher
 
         #endregion
 
+        #region Windows 시작 프로그램 관리
+
+        /// <summary>
+        /// Windows 시작 프로그램 레지스트리 키 경로
+        /// </summary>
+        private const string StartupRegistryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+
+        /// <summary>
+        /// 레지스트리에 등록할 애플리케이션 이름
+        /// </summary>
+        private const string AppName = "SpringBootLauncher";
+
+        /// <summary>
+        /// Windows 시작 프로그램에 등록
+        /// </summary>
+        private void RegisterStartup()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true);
+                if (key != null)
+                {
+                    // 실행 파일 경로 (현재 프로세스 경로)
+                    var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        // 트레이로 시작하도록 --minimized 인자 추가
+                        key.SetValue(AppName, $"\"{exePath}\" --minimized");
+                        AppendLog(LogLevel.INFO, "Windows 시작 프로그램에 등록되었습니다.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog(LogLevel.ERROR, $"시작 프로그램 등록 실패: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Windows 시작 프로그램에서 제거
+        /// </summary>
+        private void UnregisterStartup()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true);
+                if (key != null)
+                {
+                    key.DeleteValue(AppName, false);
+                    AppendLog(LogLevel.INFO, "Windows 시작 프로그램에서 제거되었습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog(LogLevel.ERROR, $"시작 프로그램 제거 실패: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Windows 시작 프로그램 등록 여부 확인
+        /// </summary>
+        private bool IsRegisteredStartup()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, false);
+                return key?.GetValue(AppName) != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
         #region 생성자 및 초기화
 
         /// <summary>
@@ -190,6 +266,18 @@ namespace SpringBootLauncher
             Settings.Load();
             JarPathTextBox.Text = Settings.JarPath ?? string.Empty;
 
+            // 자동 시작 체크박스 상태 로드
+            AutoStartCheckBox.IsChecked = Settings.AutoStart;
+
+            // 레지스트리와 설정 동기화 (레지스트리가 우선)
+            bool isRegistered = IsRegisteredStartup();
+            if (isRegistered != Settings.AutoStart)
+            {
+                Settings.AutoStart = isRegistered;
+                AutoStartCheckBox.IsChecked = isRegistered;
+                Settings.Save();
+            }
+
             // 상태 인디케이터 초기 색상 (빨간색 = 중지됨)
             _statusBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626")!);
             StatusIndicator.Fill = _statusBrush;
@@ -215,6 +303,18 @@ namespace SpringBootLauncher
 
             // 초기 로그 메시지
             AppendLog(LogLevel.INFO, "프로그램 시작");
+
+            // 자동 시작이 활성화되어 있고 유효한 JAR 경로가 있으면 서버 자동 시작
+            if (Settings.AutoStart && Settings.HasValidJarPath())
+            {
+                AppendLog(LogLevel.INFO, "자동 시작 설정이 활성화되어 있습니다. 서버를 시작합니다...");
+                // 초기화 완료 후 서버 시작 (비동기)
+                Dispatcher.BeginInvoke(async () =>
+                {
+                    await Task.Delay(1000); // UI 초기화 대기
+                    await StartServerAsync(showToast: false);
+                }, DispatcherPriority.Loaded);
+            }
 
             // 로그 자동 스크롤 감지 이벤트 등록
             var scrollViewer = GetScrollViewer(LogListBox);
@@ -489,6 +589,32 @@ namespace SpringBootLauncher
         }
 
         /// <summary>
+        /// 자동 시작 체크박스 변경 핸들러
+        /// </summary>
+        private void AutoStartCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            // 초기화 중에는 무시
+            if (AutoStartCheckBox == null || Settings == null)
+                return;
+
+            bool isChecked = AutoStartCheckBox.IsChecked == true;
+
+            // 설정 저장
+            Settings.AutoStart = isChecked;
+            Settings.Save();
+
+            // 레지스트리 업데이트
+            if (isChecked)
+            {
+                RegisterStartup();
+            }
+            else
+            {
+                UnregisterStartup();
+            }
+        }
+
+        /// <summary>
         /// 서버 시작 버튼 클릭 핸들러
         /// async void이지만 이벤트 핸들러이므로 예외를 안전하게 처리
         /// </summary>
@@ -701,7 +827,7 @@ namespace SpringBootLauncher
                 }
 
                 // 인자 구성: 포트, 프로파일
-                string args = $"-jar \"{jar}\"";
+                string args = $"-Dfile.encoding=UTF-8 -jar \"{jar}\"";
 
                 // 포트 설정
                 if (!string.IsNullOrEmpty(Settings.Port))
@@ -1282,6 +1408,7 @@ namespace SpringBootLauncher
         public string? JarPath { get; set; }
         public string? Port { get; set; }
         public string? Profile { get; set; }
+        public bool AutoStart { get; set; }
 
         public SettingsManager(string path) => _path = path;
 
@@ -1295,33 +1422,22 @@ namespace SpringBootLauncher
                 var lines = File.ReadAllLines(_path, Encoding.UTF8);
                 if (lines.Length >= 1) JarPath = lines[0].Trim();
 
-                // 기존 파일 형식 호환: AUTO_START 라인 건너뛰기
+                // 라인 2: Profile
                 if (lines.Length >= 2)
                 {
-                    var line1 = lines[1].Trim();
-                    if (!line1.StartsWith("AUTO_START=", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Profile = line1;
-                    }
+                    Profile = lines[1].Trim();
                 }
 
+                // 라인 3: Port
                 if (lines.Length >= 3)
                 {
-                    var line2 = lines[2].Trim();
-                    // AUTO_START 다음이 Profile인 경우
-                    if (lines.Length >= 2 && lines[1].Trim().StartsWith("AUTO_START=", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Profile = line2;
-                    }
-                    else
-                    {
-                        Port = line2;
-                    }
+                    Port = lines[2].Trim();
                 }
 
+                // 라인 4: AutoStart
                 if (lines.Length >= 4)
                 {
-                    Port = lines[3].Trim();
+                    AutoStart = bool.TryParse(lines[3].Trim(), out var autoStart) && autoStart;
                 }
             }
             catch
@@ -1342,6 +1458,7 @@ namespace SpringBootLauncher
                     _sharedBuilder.AppendLine(JarPath ?? string.Empty);
                     _sharedBuilder.AppendLine(Profile ?? string.Empty);
                     _sharedBuilder.AppendLine(Port ?? string.Empty);
+                    _sharedBuilder.AppendLine(AutoStart.ToString());
                     File.WriteAllText(_path, _sharedBuilder.ToString(), Encoding.UTF8);
                 }
             }

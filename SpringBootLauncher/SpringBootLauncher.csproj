@@ -6,6 +6,7 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Icons\spring_icon.ico</ApplicationIcon>
 
     <!-- 배포 전략: 단일 exe, 런타임 포함 -->
     <PublishSingleFile>true</PublishSingleFile>
@@ -15,6 +16,7 @@
 
     <!-- 단일 파일 최적화 -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
     <!-- 트리밍 (WPF는 주의 필요) -->

@@ -106,49 +106,56 @@
         <!-- JAR 파일 경로 선택 -->
         <Border Grid.Row="0" Style="{StaticResource ModernCard}" Margin="12,12,12,12">
             <Grid>
-                
-                <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Row="0" 
-                               Text="JAR 파일 경로" 
-                               FontSize="16" 
-                               FontWeight="SemiBold" 
+
+                    <TextBlock Grid.Column="0"
+                               Text="JAR 파일 경로"
+                               FontSize="16"
+                               FontWeight="SemiBold"
                                Foreground="{StaticResource HeaderText}"
                                VerticalAlignment="Center"
                                Margin="0,0,8,0"/>
-                    
-                    <Border Grid.Column="1" 
-                            BorderBrush="{StaticResource BorderColor}" 
-                            BorderThickness="1" 
-                            CornerRadius="8" 
+
+                    <Border Grid.Column="1"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="8"
                             Background="White">
-                        <TextBox x:Name="JarPathTextBox" 
-                                 BorderThickness="0" 
-                                 Padding="12,10" 
+                        <TextBox x:Name="JarPathTextBox"
+                                 BorderThickness="0"
+                                 Padding="12,10"
                                  FontSize="14"
                                  VerticalContentAlignment="Center"
                                  ToolTip="JAR 파일 절대 경로"/>
                     </Border>
-                    
+
                     <Button x:Name="BrowseButton"
-                            Grid.Column="2" 
-                            Content="📁 찾아보기" 
-                            Click="BrowseJar_Click" 
+                            Grid.Column="2"
+                            Content="📁 찾아보기"
+                            Click="BrowseJar_Click"
                             Style="{StaticResource PrimaryButton}"
                             Margin="12,0,0,0"/>
-                    
+
                     <Button x:Name="SettingsButton"
-                            Grid.Column="3" 
-                            Content="⚙️ 설정" 
-                            Click="Settings_Click" 
+                            Grid.Column="3"
+                            Content="⚙️ 설정"
+                            Click="Settings_Click"
                             Style="{StaticResource SecondaryButton}"
                             Margin="8,0,0,0"/>
+
+                    
                 </Grid>
             </Grid>
         </Border>
@@ -249,12 +256,24 @@
                 
                 <!-- 로그 영역 -->
                 <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,0">
                     <TextBlock DockPanel.Dock="Top" 
                                Text="실시간 로그" 
                                FontSize="14" 
                                FontWeight="SemiBold" 
                                Foreground="{StaticResource MutedText}"
                                Margin="0,0,0,12"/>
+                    <!-- 자동 시작 체크박스 -->
+                    <CheckBox x:Name="AutoStartCheckBox"
+                              Grid.Column="4"
+                              Content="서버 자동 실행"
+                              FontSize="13"
+                              Foreground="{StaticResource BodyText}"
+                              VerticalAlignment="Center"
+                              Margin="20,0,0,10"
+                              Checked="AutoStartCheckBox_Changed"
+                              Unchecked="AutoStartCheckBox_Changed"/>
+                    </StackPanel>
                     
                     <Border BorderBrush="{StaticResource BorderColor}"
                             BorderThickness="1"
@@ -324,7 +343,7 @@
                            Text="체크 주기: 5분 | 마지막 체크: -" 
                            Foreground="{StaticResource MutedText}"
                            FontSize="12"/>
-                <TextBlock Text="💡 프로그램을 닫으면 트레이로 최소화됩니다" 
+                <TextBlock Text="💡 프로그램을 닫으면 작업표시줄에 배치" 
                            HorizontalAlignment="Right" 
                            Foreground="{StaticResource MutedText}"
                            FontSize="12"/>

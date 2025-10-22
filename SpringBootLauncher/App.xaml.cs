@@ -77,8 +77,10 @@ namespace SpringBootLauncher
 
             var main = new MainWindow();
 
-            // /minimized 인자 처리
-            bool startMinimized = e.Args.Any(a => a.Equals("/minimized", StringComparison.OrdinalIgnoreCase));
+            // /minimized 또는 --minimized 인자 처리
+            bool startMinimized = e.Args.Any(a =>
+                a.Equals("/minimized", StringComparison.OrdinalIgnoreCase) ||
+                a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
 
             if (startMinimized)
             {
