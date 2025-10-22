@@ -17,11 +17,19 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> InstallAsync(string saUserId, string saPassword)
+        public async Task<bool> InstallAsync(string saUserId, string saPassword, bool isDryRun = false)
         {
             try
             {
                 _logger.Info("MSSQL Developer Edition 설치 시작");
+
+                if (isDryRun)
+                {
+                    _logger.Info("[DRY-RUN] MSSQL 설치 시뮬레이션 모드");
+                    await Task.Delay(5000); // 시뮬레이션 지연
+                    _logger.Success("[DRY-RUN] MSSQL 설치 완료 (시뮬레이션)");
+                    return true;
+                }
 
                 // 1. CAB 설치 파일 경로 확인
                 string installerFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "installers");
@@ -139,11 +147,19 @@ namespace SpringBootInstaller.Services
                    $"/UPDATEENABLED=0";
         }
 
-        public async Task<bool> WaitForServiceAsync()
+        public async Task<bool> WaitForServiceAsync(bool isDryRun = false)
         {
             try
             {
                 _logger.Info($"SQL Server 서비스 시작 대기 중... (서비스명: {ServiceName})");
+
+                if (isDryRun)
+                {
+                    _logger.Info("[DRY-RUN] SQL Server 서비스 대기 시뮬레이션 모드");
+                    await Task.Delay(2000);
+                    _logger.Success("[DRY-RUN] SQL Server 서비스 실행 확인 (시뮬레이션)");
+                    return true;
+                }
 
                 int elapsedSeconds = 0;
 

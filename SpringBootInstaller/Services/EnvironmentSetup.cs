@@ -13,11 +13,20 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> SetupAsync(string javaPath)
+        public async Task<bool> SetupAsync(string javaPath, bool isDryRun = false)
         {
             try
             {
                 _logger.Info($"환경변수 설정 시작: JAVA_HOME = {javaPath}");
+
+                if (isDryRun)
+                {
+                    _logger.Info("[DRY-RUN] 환경변수 설정 시뮬레이션 모드");
+                    await Task.Delay(1500);
+                    _logger.Success($"[DRY-RUN] JAVA_HOME 설정 완료 (시뮬레이션): {javaPath}");
+                    _logger.Success($"[DRY-RUN] PATH에 Java bin 추가 완료 (시뮬레이션): C:\\java\\bin");
+                    return true;
+                }
 
                 await Task.Run(() =>
                 {

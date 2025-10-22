@@ -114,7 +114,8 @@ namespace SpringBootInstaller.Windows
                 SqlUserId = UserIdTextBox.Text.Trim(),
                 SqlPassword = PasswordBox.Password,
                 InstallPath = InstallPathTextBox.Text,
-                ScriptsPath = string.IsNullOrWhiteSpace(ScriptsPathTextBox.Text) ? null : ScriptsPathTextBox.Text.Trim()
+                ScriptsPath = string.IsNullOrWhiteSpace(ScriptsPathTextBox.Text) ? null : ScriptsPathTextBox.Text.Trim(),
+                IsDryRun = DryRunCheckBox?.IsChecked ?? false // DryRun 체크박스 값 반영
             };
 
             // 설치 진행 화면으로 이동

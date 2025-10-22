@@ -39,5 +39,10 @@ namespace SpringBootInstaller.Models
         /// MSSQL 서버 주소
         /// </summary>
         public string SqlServer => $@"localhost\{SqlInstanceName}";
+
+        /// <summary>
+        /// 드라이런 모드 (실제 설치 없이 시뮬레이션만)
+        /// </summary>
+        public bool IsDryRun { get; set; } = false;
     }
 }

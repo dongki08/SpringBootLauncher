@@ -16,11 +16,19 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> ExecuteScriptsAsync(string saUserId, string saPassword, string? scriptsPath = null)
+        public async Task<bool> ExecuteScriptsAsync(string saUserId, string saPassword, string? scriptsPath = null, bool isDryRun = false)
         {
             try
             {
                 _logger.Info("데이터베이스 스크립트 실행 시작");
+
+                if (isDryRun)
+                {
+                    _logger.Info("[DRY-RUN] 데이터베이스 스크립트 실행 시뮬레이션 모드");
+                    await Task.Delay(3000);
+                    _logger.Success("[DRY-RUN] 데이터베이스 스크립트 실행 완료 (시뮬레이션)");
+                    return true;
+                }
 
                 // 1. scripts 폴더 확인 (사용자 지정 경로 또는 기본 경로)
                 string scriptsFolder = scriptsPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts");

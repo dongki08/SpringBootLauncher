@@ -14,11 +14,19 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> InstallAsync(string targetPath)
+        public async Task<bool> InstallAsync(string targetPath, bool isDryRun = false)
         {
             try
             {
                 _logger.Info($"Java 설치 시작: 대상 경로 = {targetPath}");
+
+                if (isDryRun)
+                {
+                    _logger.Info("[DRY-RUN] Java 설치 시뮬레이션 모드");
+                    await Task.Delay(2000); // 시뮬레이션 지연
+                    _logger.Success("[DRY-RUN] Java 설치 완료 (시뮬레이션)");
+                    return true;
+                }
 
                 // 1. 설치 파일 경로 확인
                 string installerFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "installers");

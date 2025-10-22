@@ -112,43 +112,43 @@ namespace SpringBootInstaller.Services
         private async Task<bool> InstallJavaAsync()
         {
             var javaInstaller = new JavaInstaller();
-            return await javaInstaller.InstallAsync(_config.JavaPath);
+            return await javaInstaller.InstallAsync(_config.JavaPath, _config.IsDryRun);
         }
 
         private async Task<bool> SetupEnvironmentAsync()
         {
             var envSetup = new EnvironmentSetup();
-            return await envSetup.SetupAsync(_config.JavaPath);
+            return await envSetup.SetupAsync(_config.JavaPath, _config.IsDryRun);
         }
 
         private async Task<bool> InstallMSSQLAsync()
         {
             var sqlInstaller = new MSSQLInstaller();
-            return await sqlInstaller.InstallAsync(_config.SqlUserId, _config.SqlPassword);
+            return await sqlInstaller.InstallAsync(_config.SqlUserId, _config.SqlPassword, _config.IsDryRun);
         }
 
         private async Task<bool> WaitForSqlServiceAsync()
         {
             var sqlInstaller = new MSSQLInstaller();
-            return await sqlInstaller.WaitForServiceAsync();
+            return await sqlInstaller.WaitForServiceAsync(_config.IsDryRun);
         }
 
         private async Task<bool> ExecuteDatabaseScriptsAsync()
         {
             var dbRunner = new DatabaseScriptRunner();
-            return await dbRunner.ExecuteScriptsAsync(_config.SqlUserId, _config.SqlPassword, _config.ScriptsPath);
+            return await dbRunner.ExecuteScriptsAsync(_config.SqlUserId, _config.SqlPassword, _config.ScriptsPath, _config.IsDryRun);
         }
 
         private async Task<bool> InstallApplicationAsync()
         {
             var appInstaller = new ApplicationInstaller();
-            return await appInstaller.InstallAsync(_config.InstallPath);
+            return await appInstaller.InstallAsync(_config.InstallPath, _config.IsDryRun);
         }
 
         private async Task<bool> CreateDesktopShortcutAsync()
         {
             var appInstaller = new ApplicationInstaller();
-            return await appInstaller.CreateShortcutAsync(_config.InstallPath);
+            return await appInstaller.CreateShortcutAsync(_config.InstallPath, _config.IsDryRun);
         }
     }
 }
