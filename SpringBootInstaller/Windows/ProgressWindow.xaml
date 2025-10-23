@@ -6,6 +6,7 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource PrimaryBg}"
+        Icon="/icon/detail_orenge_logo.ico"
         Closing="Window_Closing">
 
     <Grid>

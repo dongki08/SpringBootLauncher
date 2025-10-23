@@ -5,7 +5,8 @@
         Width="800" Height="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="{StaticResource PrimaryBg}">
+        Background="{StaticResource PrimaryBg}"
+        Icon="/icon/detail_orenge_logo.ico">
 
     <Grid>
         <Grid.RowDefinitions>

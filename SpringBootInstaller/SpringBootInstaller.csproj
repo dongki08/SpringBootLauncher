@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- 아이콘 설정 -->
+    <ApplicationIcon>icon\detail_orenge_logo.ico</ApplicationIcon>
+
     <!-- 관리자 권한 요청 -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
@@ -30,6 +33,9 @@
     <Content Include="installers\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+
+    <!-- icon 폴더의 파일들을 리소스로 포함 -->
+    <Resource Include="icon\**\*.*" />
   </ItemGroup>
 
 </Project>
