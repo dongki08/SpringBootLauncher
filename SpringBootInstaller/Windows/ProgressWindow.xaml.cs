@@ -57,7 +57,6 @@ namespace SpringBootInstaller.Windows
                 "MSSQL Developer 설치",
                 "SQL Server 서비스 시작 대기",
                 "데이터베이스 스크립트 실행",
-                "애플리케이션 설치",
                 "바탕화면 바로가기 생성"
             };
 
@@ -76,7 +75,7 @@ namespace SpringBootInstaller.Windows
             var panel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 8, 0, 8)
+                Margin = new Thickness(0, 0, 0, 2)
             };
 
             var icon = new TextBlock
@@ -91,7 +90,7 @@ namespace SpringBootInstaller.Windows
             var text = new TextBlock
             {
                 Text = task.Name,
-                FontSize = 14,
+                FontSize = 12,
                 Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -144,7 +143,7 @@ namespace SpringBootInstaller.Windows
                 else
                 {
                     MessageBox.Show(
-                        "설치 중 오류가 발생했습니다.\n로그 파일을 확인하세요.\n\nC:\\MyAppInstall\\Logs\\",
+                        "설치 중 오류가 발생했습니다.\n로그 파일을 확인하세요.\n\nC:\\ACS\\Logs\\",
                         "설치 실패",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error

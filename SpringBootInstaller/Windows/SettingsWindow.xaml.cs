@@ -57,26 +57,6 @@ namespace SpringBootInstaller.Windows
             NextButton.IsEnabled = hasUserId && passwordsMatch;
         }
 
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new SaveFileDialog
-            {
-                Title = "설치 경로 선택",
-                FileName = "폴더 선택",
-                Filter = "폴더|*.folder",
-                CheckFileExists = false,
-                CheckPathExists = true
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                string? selectedPath = Path.GetDirectoryName(dialog.FileName);
-                if (!string.IsNullOrEmpty(selectedPath))
-                {
-                    InstallPathTextBox.Text = selectedPath;
-                }
-            }
-        }
 
         private void BrowseScriptsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -111,9 +91,8 @@ namespace SpringBootInstaller.Windows
             // 설정 저장
             var config = new InstallConfig
             {
-                SqlUserId = UserIdTextBox.Text.Trim(),
-                SqlPassword = PasswordBox.Password,
-                InstallPath = InstallPathTextBox.Text,
+                AppUserId = UserIdTextBox.Text.Trim(),
+                AppPassword = PasswordBox.Password,
                 ScriptsPath = string.IsNullOrWhiteSpace(ScriptsPathTextBox.Text) ? null : ScriptsPathTextBox.Text.Trim(),
                 IsDryRun = DryRunCheckBox?.IsChecked ?? false // DryRun 체크박스 값 반영
             };

@@ -16,16 +16,16 @@ namespace SpringBootInstaller.Windows
 
             // 설치 정보 표시
             SqlServerText.Text = config.SqlServer;
-            SqlUserIdText.Text = config.SqlUserId;
-            InstallPathText.Text = config.InstallPath;
+            AppUserIdText.Text = config.AppUserId;
         }
 
         private void LaunchButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // SpringBootLauncher.exe 실행
-                string launcherPath = Path.Combine(_config.InstallPath, "SpringBootLauncher.exe");
+                // 고정 경로: C:\ACS\server\Launcher\SpringBootLauncher.exe
+                string launcherFolder = @"C:\ACS\server\Launcher";
+                string launcherPath = Path.Combine(launcherFolder, "SpringBootLauncher.exe");
 
                 if (File.Exists(launcherPath))
                 {
@@ -33,7 +33,7 @@ namespace SpringBootInstaller.Windows
                     {
                         FileName = launcherPath,
                         UseShellExecute = true,
-                        WorkingDirectory = _config.InstallPath
+                        WorkingDirectory = launcherFolder
                     });
 
                     Application.Current.Shutdown();
@@ -41,7 +41,7 @@ namespace SpringBootInstaller.Windows
                 else
                 {
                     MessageBox.Show(
-                        $"실행 파일을 찾을 수 없습니다.\n{launcherPath}",
+                        $"실행 파일을 찾을 수 없습니다.\n{launcherPath}\n\nSpringBootLauncher.exe가 C:\\ACS\\server\\Launcher\\ 폴더에 있어야 합니다.",
                         "오류",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error

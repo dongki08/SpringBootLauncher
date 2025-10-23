@@ -47,13 +47,10 @@ namespace SpringBootInstaller.Services
                 await ExecuteTask(4, "SQL Server 서비스 시작 대기 중...", 60, WaitForSqlServiceAsync);
 
                 // 5. 데이터베이스 스크립트 실행
-                await ExecuteTask(5, "데이터베이스 스크립트 실행 중...", 75, ExecuteDatabaseScriptsAsync);
+                await ExecuteTask(5, "데이터베이스 스크립트 실행 중...", 85, ExecuteDatabaseScriptsAsync);
 
-                // 6. 애플리케이션 설치
-                await ExecuteTask(6, "애플리케이션 설치 중...", 90, InstallApplicationAsync);
-
-                // 7. 바탕화면 바로가기
-                await ExecuteTask(7, "바탕화면 바로가기 생성 중...", 95, CreateDesktopShortcutAsync);
+                // 6. 바탕화면 바로가기 생성
+                await ExecuteTask(6, "바탕화면 바로가기 생성 중...", 95, CreateDesktopShortcutAsync);
 
                 // 완료
                 ReportProgress(100, "설치 완료!");
@@ -124,7 +121,7 @@ namespace SpringBootInstaller.Services
         private async Task<bool> InstallMSSQLAsync()
         {
             var sqlInstaller = new MSSQLInstaller();
-            return await sqlInstaller.InstallAsync(_config.SqlUserId, _config.SqlPassword, _config.IsDryRun);
+            return await sqlInstaller.InstallAsync(_config.SaPassword, _config.SqlInstanceName, _config.IsDryRun);
         }
 
         private async Task<bool> WaitForSqlServiceAsync()
@@ -136,19 +133,14 @@ namespace SpringBootInstaller.Services
         private async Task<bool> ExecuteDatabaseScriptsAsync()
         {
             var dbRunner = new DatabaseScriptRunner();
-            return await dbRunner.ExecuteScriptsAsync(_config.SqlUserId, _config.SqlPassword, _config.ScriptsPath, _config.IsDryRun);
-        }
-
-        private async Task<bool> InstallApplicationAsync()
-        {
-            var appInstaller = new ApplicationInstaller();
-            return await appInstaller.InstallAsync(_config.InstallPath, _config.IsDryRun);
+            // SA 계정으로 스크립트 실행 후, 애플리케이션 사용자 생성
+            return await dbRunner.ExecuteScriptsAsync(_config.SaPassword, _config.AppUserId, _config.AppPassword, _config.ScriptsPath, _config.IsDryRun);
         }
 
         private async Task<bool> CreateDesktopShortcutAsync()
         {
             var appInstaller = new ApplicationInstaller();
-            return await appInstaller.CreateShortcutAsync(_config.InstallPath, _config.IsDryRun);
+            return await appInstaller.CreateShortcutAsync(_config.IsDryRun);
         }
     }
 }

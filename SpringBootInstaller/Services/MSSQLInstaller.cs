@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 
@@ -17,11 +18,50 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> InstallAsync(string saUserId, string saPassword, bool isDryRun = false)
+        /// <summary>
+        /// SQL Server가 이미 설치되어 있는지 확인
+        /// </summary>
+        private bool IsSqlServerInstalled()
+        {
+            try
+            {
+                // MSSQLSERVER (기본 인스턴스) 또는 MSSQL$* (명명된 인스턴스) 서비스 확인
+                var services = ServiceController.GetServices();
+                var sqlServices = services.Where(s =>
+                    s.ServiceName == "MSSQLSERVER" ||
+                    s.ServiceName.StartsWith("MSSQL$")).ToList();
+
+                if (sqlServices.Any())
+                {
+                    foreach (var service in sqlServices)
+                    {
+                        _logger.Info($"발견된 SQL Server 서비스: {service.ServiceName} (상태: {service.Status})");
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"SQL Server 설치 확인 중 오류: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> InstallAsync(string saPassword, string instanceName = "", bool isDryRun = false)
         {
             try
             {
                 _logger.Info("MSSQL Developer Edition 설치 시작");
+
+                // 이미 설치되어 있는지 확인
+                if (IsSqlServerInstalled())
+                {
+                    _logger.Info("SQL Server가 이미 설치되어 있습니다. 설치를 건너뜁니다.");
+                    _logger.Success("기존 SQL Server 인스턴스를 사용합니다.");
+                    return true;
+                }
 
                 if (isDryRun)
                 {
@@ -57,7 +97,7 @@ namespace SpringBootInstaller.Services
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = setupExePath,
-                    Arguments = BuildInstallArguments(saUserId, saPassword),
+                    Arguments = BuildInstallArguments(saPassword, instanceName),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -117,27 +157,31 @@ namespace SpringBootInstaller.Services
             }
         }
 
-        private string BuildInstallArguments(string saUserId, string saPassword)
+        private string BuildInstallArguments(string saPassword, string instanceName)
         {
             // SQL Server 2022 Developer Edition 무인 설치 파라미터
             // /Q: Quiet 모드 (UI 없음)
             // /ACTION=Install: 설치 작업
             // /FEATURES=SQLEngine: SQL 엔진만 설치
-            // /INSTANCENAME=SQLEXPRESS: 인스턴스 이름
+            // /INSTANCENAME: 인스턴스 이름 (MSSQLSERVER=기본, SQLEXPRESS 등=명명된 인스턴스)
             // /SECURITYMODE=SQL: SQL 인증 모드 활성화
             // /SAPWD: SA 계정 비밀번호
             // /SQLSVCACCOUNT: SQL 서비스 계정 (NT AUTHORITY\SYSTEM)
             // /SQLSYSADMINACCOUNTS: 관리자 권한 계정
             // /IACCEPTSQLSERVERLICENSETERMS: 라이선스 동의
             // /TCPENABLED=1: TCP/IP 프로토콜 활성화
-            // 참고: SA 계정 아이디는 설치 후 별도로 변경할 수 없으므로, 기본값 'sa' 사용
+            // 참고: SA 계정 아이디는 항상 'sa'로 고정됨
 
-            _logger.Info($"SA 계정 아이디: {saUserId} (참고: MSSQL 설치 시 SA 이름은 항상 'sa'로 고정됨)");
+            // 인스턴스명 결정 (빈 문자열이면 MSSQLSERVER 사용)
+            string finalInstanceName = string.IsNullOrWhiteSpace(instanceName) ? "MSSQLSERVER" : instanceName;
+
+            _logger.Info($"SA 계정: sa (고정값)");
+            _logger.Info($"설치할 인스턴스명: {finalInstanceName}");
 
             return $"/Q " +
                    $"/ACTION=Install " +
                    $"/FEATURES=SQLEngine " +
-                   $"/INSTANCENAME=SQLEXPRESS " +
+                   $"/INSTANCENAME={finalInstanceName} " +
                    $"/SECURITYMODE=SQL " +
                    $"/SAPWD=\"{saPassword}\" " +
                    $"/SQLSVCACCOUNT=\"NT AUTHORITY\\SYSTEM\" " +
@@ -151,7 +195,7 @@ namespace SpringBootInstaller.Services
         {
             try
             {
-                _logger.Info($"SQL Server 서비스 시작 대기 중... (서비스명: {ServiceName})");
+                _logger.Info("SQL Server 서비스 시작 대기 중...");
 
                 if (isDryRun)
                 {
@@ -161,37 +205,59 @@ namespace SpringBootInstaller.Services
                     return true;
                 }
 
+                // 먼저 어떤 SQL Server 서비스가 있는지 확인
+                var services = ServiceController.GetServices();
+                var sqlServices = services.Where(s =>
+                    s.ServiceName == "MSSQLSERVER" ||
+                    s.ServiceName.StartsWith("MSSQL$")).ToList();
+
+                if (!sqlServices.Any())
+                {
+                    _logger.Error("SQL Server 서비스를 찾을 수 없습니다.");
+                    return false;
+                }
+
                 int elapsedSeconds = 0;
 
                 while (elapsedSeconds < MaxWaitTimeSeconds)
                 {
-                    try
+                    bool anyRunning = false;
+
+                    foreach (var sqlService in sqlServices)
                     {
-                        using var service = new ServiceController(ServiceName);
-
-                        if (service.Status == ServiceControllerStatus.Running)
+                        try
                         {
-                            _logger.Success($"SQL Server 서비스가 실행 중입니다. (대기 시간: {elapsedSeconds}초)");
-                            return true;
-                        }
+                            sqlService.Refresh();
 
-                        if (service.Status == ServiceControllerStatus.Stopped)
+                            if (sqlService.Status == ServiceControllerStatus.Running)
+                            {
+                                _logger.Success($"SQL Server 서비스가 실행 중입니다: {sqlService.ServiceName}");
+                                return true;
+                            }
+
+                            if (sqlService.Status == ServiceControllerStatus.Stopped)
+                            {
+                                _logger.Info($"SQL Server 서비스가 중지되어 있습니다: {sqlService.ServiceName}. 시작을 시도합니다...");
+                                sqlService.Start();
+                                sqlService.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
+                                _logger.Success($"SQL Server 서비스 시작 완료: {sqlService.ServiceName}");
+                                return true;
+                            }
+
+                            _logger.Info($"SQL Server 서비스 상태: {sqlService.ServiceName} = {sqlService.Status}");
+                        }
+                        catch (Exception ex)
                         {
-                            _logger.Info("SQL Server 서비스가 중지되어 있습니다. 시작을 시도합니다...");
-                            service.Start();
-                            service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
-                            _logger.Success("SQL Server 서비스 시작 완료");
-                            return true;
+                            _logger.Warning($"서비스 확인 중 오류 ({sqlService.ServiceName}): {ex.Message}");
                         }
-
-                        _logger.Info($"SQL Server 서비스 상태: {service.Status} (대기 중... {elapsedSeconds}/{MaxWaitTimeSeconds}초)");
                     }
-                    catch (InvalidOperationException)
+
+                    if (anyRunning)
                     {
-                        // 서비스가 아직 설치되지 않음
-                        _logger.Info($"SQL Server 서비스를 찾을 수 없습니다. 재시도 중... ({elapsedSeconds}/{MaxWaitTimeSeconds}초)");
+                        return true;
                     }
 
+                    _logger.Info($"SQL Server 서비스 대기 중... ({elapsedSeconds}/{MaxWaitTimeSeconds}초)");
                     await Task.Delay(5000); // 5초 대기
                     elapsedSeconds += 5;
                 }

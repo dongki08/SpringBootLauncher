@@ -6,7 +6,7 @@ echo ====================================
 echo.
 
 REM 빌드 출력 폴더 정리
-echo [1/4] 이전 빌드 정리 중...
+echo [1/3] 이전 빌드 정리 중...
 if exist "server" rmdir /s /q "server"
 mkdir "server"
 mkdir "server\Installer"
@@ -14,7 +14,7 @@ mkdir "server\Launcher"
 
 REM SpringBootLauncher 빌드 (단일 exe)
 echo.
-echo [2/4] SpringBootLauncher 빌드 중...
+echo [2/3] SpringBootLauncher 빌드 중...
 dotnet publish SpringBootLauncher\SpringBootLauncher.csproj ^
   -c Release ^
   -r win-x64 ^
@@ -31,15 +31,9 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM SpringBootInstaller의 app 폴더에 Launcher 복사
-echo.
-echo [3/4] Launcher를 Installer의 app 폴더로 복사 중...
-if not exist "SpringBootInstaller\app" mkdir "SpringBootInstaller\app"
-xcopy /Y /I "server\Launcher\SpringBootLauncher.exe" "SpringBootInstaller\app\"
-
 REM SpringBootInstaller 빌드 (단일 exe + installers 폴더)
 echo.
-echo [4/4] SpringBootInstaller 빌드 중...
+echo [3/3] SpringBootInstaller 빌드 중...
 dotnet publish SpringBootInstaller\SpringBootInstaller.csproj ^
   -c Release ^
   -r win-x64 ^
@@ -70,7 +64,6 @@ echo   - SpringBootInstaller.exe (단일 파일)
 echo   - installers\openjdk-17_windows-x64_bin.zip
 echo   - installers\SQLServer2022-DEV-x64-KOR.box
 echo   - installers\SQLServer2022-DEV-x64-KOR.exe
-echo   - app\SpringBootLauncher.exe
 echo.
 
 pause

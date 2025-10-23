@@ -16,7 +16,7 @@ namespace SpringBootInstaller.Services
             _logger = LogManager.Instance;
         }
 
-        public async Task<bool> ExecuteScriptsAsync(string saUserId, string saPassword, string? scriptsPath = null, bool isDryRun = false)
+        public async Task<bool> ExecuteScriptsAsync(string saPassword, string appUserId, string appPassword, string? scriptsPath = null, bool isDryRun = false)
         {
             try
             {
@@ -27,6 +27,7 @@ namespace SpringBootInstaller.Services
                     _logger.Info("[DRY-RUN] 데이터베이스 스크립트 실행 시뮬레이션 모드");
                     await Task.Delay(3000);
                     _logger.Success("[DRY-RUN] 데이터베이스 스크립트 실행 완료 (시뮬레이션)");
+                    _logger.Success($"[DRY-RUN] 애플리케이션 DB 사용자 생성: {appUserId}");
                     return true;
                 }
 
@@ -73,7 +74,7 @@ namespace SpringBootInstaller.Services
 
                     _logger.Info($"[{i + 1}/{scriptFiles.Length}] 스크립트 실행 중: {fileName}");
 
-                    bool success = await ExecuteSingleScriptAsync(sqlcmdPath, scriptFile, saUserId, saPassword);
+                    bool success = await ExecuteSingleScriptAsync(sqlcmdPath, scriptFile, "sa", saPassword);
 
                     if (!success)
                     {
@@ -85,6 +86,18 @@ namespace SpringBootInstaller.Services
                 }
 
                 _logger.Success($"모든 데이터베이스 스크립트 실행 완료 ({scriptFiles.Length}개)");
+
+                // 5. 애플리케이션 DB 사용자 생성
+                _logger.Info($"애플리케이션 DB 사용자 생성 중: {appUserId}");
+                bool userCreated = await CreateAppUserAsync(sqlcmdPath, "sa", saPassword, appUserId, appPassword);
+
+                if (!userCreated)
+                {
+                    _logger.Error("애플리케이션 DB 사용자 생성 실패");
+                    return false;
+                }
+
+                _logger.Success($"애플리케이션 DB 사용자 생성 완료: {appUserId}");
                 return true;
             }
             catch (Exception ex)
@@ -194,6 +207,84 @@ namespace SpringBootInstaller.Services
             }
 
             return string.Empty;
+        }
+
+        private async Task<bool> CreateAppUserAsync(string sqlcmdPath, string saUserId, string saPassword, string appUserId, string appPassword)
+        {
+            try
+            {
+                _logger.Info($"애플리케이션 DB 사용자 생성: {appUserId}");
+
+                // SQL 스크립트: 로그인 생성 및 권한 부여
+                string createUserScript = $@"
+-- 기존 로그인이 있으면 제거
+IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '{appUserId}')
+BEGIN
+    DROP LOGIN [{appUserId}];
+END
+
+-- 새 로그인 생성
+CREATE LOGIN [{appUserId}] WITH PASSWORD = '{appPassword}', CHECK_POLICY = OFF;
+
+-- sysadmin 역할 부여 (모든 권한)
+ALTER SERVER ROLE sysadmin ADD MEMBER [{appUserId}];
+";
+
+                // 임시 SQL 파일 생성
+                string tempSqlFile = Path.Combine(Path.GetTempPath(), $"create_user_{Guid.NewGuid()}.sql");
+                await File.WriteAllTextAsync(tempSqlFile, createUserScript);
+
+                try
+                {
+                    // sqlcmd로 실행
+                    var processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = sqlcmdPath,
+                        Arguments = $"-S localhost -U {saUserId} -P \"{saPassword}\" -i \"{tempSqlFile}\" -b",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    };
+
+                    using var process = Process.Start(processStartInfo);
+                    if (process == null)
+                    {
+                        _logger.Error("sqlcmd 프로세스를 시작할 수 없습니다.");
+                        return false;
+                    }
+
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    string error = await process.StandardError.ReadToEndAsync();
+                    await process.WaitForExitAsync();
+
+                    if (!string.IsNullOrWhiteSpace(output))
+                    {
+                        _logger.Info($"[Create User Output] {output.Trim()}");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        _logger.Warning($"[Create User Error] {error.Trim()}");
+                    }
+
+                    int exitCode = process.ExitCode;
+                    return exitCode == 0;
+                }
+                finally
+                {
+                    // 임시 파일 삭제
+                    if (File.Exists(tempSqlFile))
+                    {
+                        File.Delete(tempSqlFile);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"애플리케이션 사용자 생성 중 예외 발생: {appUserId}", ex);
+                return false;
+            }
         }
     }
 }
